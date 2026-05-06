@@ -108,9 +108,9 @@ $inqStatus = flash_get('inq');
   <form method="post" action="/inquiry_send.php" class="form">
     <?= csrf_field() ?>
     <input type="hidden" name="product_id" value="<?= (int)$p['id'] ?>">
-    <label>Name <input name="name" placeholder="Optional"></label>
-    <label>Email <input type="email" name="email" required placeholder="your@email.com"></label>
-    <label>Message <textarea name="message" rows="4" required placeholder="Ask about availability, shipping, specs…"></textarea></label>
+    <label>Name <input name="name" placeholder="Optional" maxlength="100"></label>
+    <label>Email <input type="email" name="email" required placeholder="your@email.com" maxlength="254"></label>
+    <label>Message <textarea name="message" rows="4" required placeholder="Ask about availability, shipping, specs…" maxlength="2000"></textarea></label>
     <input type="text" name="company" style="display:none" tabindex="-1" autocomplete="off">
     <button class="btn" type="submit">Send Message</button>
   </form>

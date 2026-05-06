@@ -21,8 +21,10 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
     $category_id = ($_POST['category_id'] ?? '') !== '' ? (int)$_POST['category_id'] : null;
     $stock       = (int)($_POST['stock'] ?? 0);
 
-    if ($name === '') $error = 'Name is required';
-    if ($price <= 0)  $error = $error ?: 'Price must be greater than 0';
+    if ($name === '')                   $error = 'Name is required';
+    elseif (mb_strlen($name) > 200)    $error = 'Name is too long (max 200 characters)';
+    if (mb_strlen($description) > 5000) $error = $error ?: 'Description is too long (max 5000 characters)';
+    if ($price <= 0)                   $error = $error ?: 'Price must be greater than 0';
 
     // --- Image upload (robust) ---
     $imageName = $item['image'] ?? null;
@@ -105,10 +107,10 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
 <form method="post" enctype="multipart/form-data" class="form" style="max-width:640px;">
   <?= csrf_field() ?>
   <label>Name
-    <input name="name" value="<?= h($item['name']) ?>" required>
+    <input name="name" value="<?= h($item['name']) ?>" required maxlength="200">
   </label>
   <label>Description
-    <textarea name="description" rows="4"><?= h($item['description'] ?? '') ?></textarea>
+    <textarea name="description" rows="4" maxlength="5000"><?= h($item['description'] ?? '') ?></textarea>
   </label>
   <div class="grid">
     <div class="card">

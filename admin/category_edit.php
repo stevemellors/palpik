@@ -14,7 +14,9 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
   csrf_verify();
   $name = trim($_POST['name'] ?? '');
   $desc = trim($_POST['description'] ?? '');
-  if ($name === '') { $err = 'Name is required'; }
+  if ($name === '')                 { $err = 'Name is required'; }
+  elseif (mb_strlen($name) > 100)  { $err = 'Name is too long (max 100 characters)'; }
+  elseif (mb_strlen($desc) > 1000) { $err = 'Description is too long (max 1000 characters)'; }
   if (!$err) {
     if ($id) category_update($id, $name, $desc);
     else     $id = category_create($name, $desc);
@@ -33,10 +35,10 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
 <form method="post" class="form" style="max-width:560px;">
   <?= csrf_field() ?>
   <label>Name
-    <input name="name" value="<?= h($cat['name']) ?>" required>
+    <input name="name" value="<?= h($cat['name']) ?>" required maxlength="100">
   </label>
   <label>Description
-    <textarea name="description" rows="4"><?= h($cat['description'] ?? '') ?></textarea>
+    <textarea name="description" rows="4" maxlength="1000"><?= h($cat['description'] ?? '') ?></textarea>
   </label>
   <div style="display:flex;gap:8px;margin-top:10px;">
     <button class="btn" type="submit">Save</button>

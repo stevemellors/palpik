@@ -64,4 +64,11 @@ $subtotal = cart_total();
     </div>
   </form>
 <?php endif; ?>
+
+<footer class="site-footer">
+  <p>&copy; <?= date('Y') ?> <?= h(SITE_NAME) ?>. All rights reserved.</p>
+  <div class="foot-links">
+    <a href="/">Home</a><span>·</span><a href="/cart.php">Cart</a><span>·</span><a href="/admin/login.php">Admin</a>
+  </div>
+</footer>
 </body></html>

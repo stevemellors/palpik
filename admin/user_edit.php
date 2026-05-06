@@ -20,8 +20,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   if ($name === '') {
     $err = 'Name is required';
+  } elseif (mb_strlen($name) > 100) {
+    $err = 'Name is too long (max 100 characters)';
   } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $err = 'Valid email required';
+  } elseif (mb_strlen($email) > 254) {
+    $err = 'Email is too long';
   } elseif ($id === 0 && $pwd === '') {
     $err = 'Password required for new admin';
   } elseif ($pwd !== '' && $pwd !== $pwd2) {
@@ -58,10 +62,10 @@ $roleVal = $u['role'] ?? 'admin';
 <form method="post" class="form" style="max-width:420px;">
   <?= csrf_field() ?>
   <label>Name
-    <input name="name" value="<?= h($nameVal) ?>" required>
+    <input name="name" value="<?= h($nameVal) ?>" required maxlength="100">
   </label>
   <label>Email
-    <input type="email" name="email" value="<?= h($emailVal) ?>" required>
+    <input type="email" name="email" value="<?= h($emailVal) ?>" required maxlength="254">
   </label>
   <label>Role
     <select name="role">

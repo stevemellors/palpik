@@ -21,9 +21,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$cart) {
         $error = 'Your cart is empty.';
     } else {
-        $required = ['name','email','address','city','state','zip'];
-        foreach ($required as $r) {
-            if (trim($_POST[$r] ?? '') === '') { $error = 'Please fill all required fields.'; break; }
+        $limits = ['name'=>100,'email'=>254,'address'=>200,'city'=>100,'state'=>100,'zip'=>20];
+        foreach ($limits as $field => $max) {
+            $val = trim($_POST[$field] ?? '');
+            if ($val === '') { $error = 'Please fill all required fields.'; break; }
+            if (mb_strlen($val) > $max) { $error = ucfirst($field).' is too long (max '.$max.' characters).'; break; }
         }
         if (!$error && !filter_var(trim($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL)) {
             $error = 'Please enter a valid email address.';
@@ -105,12 +107,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="kicker">Contact & Shipping</div>
       <form method="post" class="form">
         <?= csrf_field() ?>
-        <label>Full Name <input name="name" required></label>
-        <label>Email <input type="email" name="email" required></label>
-        <label>Address <input name="address" required></label>
-        <label>City <input name="city" required></label>
-        <label>State/Prov <input name="state" required></label>
-        <label>ZIP/Postal <input name="zip" required></label>
+        <label>Full Name <input name="name" required maxlength="100"></label>
+        <label>Email <input type="email" name="email" required maxlength="254"></label>
+        <label>Address <input name="address" required maxlength="200"></label>
+        <label>City <input name="city" required maxlength="100"></label>
+        <label>State/Prov <input name="state" required maxlength="100"></label>
+        <label>ZIP/Postal <input name="zip" required maxlength="20"></label>
         <div style="display:flex;gap:8px;margin-top:10px;">
           <a class="btn" href="/cart.php">← Back to Cart</a>
           <button class="btn" type="submit">Place Order</button>

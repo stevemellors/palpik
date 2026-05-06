@@ -18,7 +18,8 @@ $honeypot  = trim($_POST['company'] ?? ''); // hidden anti-bot
 
 if ($honeypot !== '') { header('Location: /'); exit; }
 
-if ($productId <= 0 || !filter_var($email, FILTER_VALIDATE_EMAIL) || $body === '') {
+if ($productId <= 0 || !filter_var($email, FILTER_VALIDATE_EMAIL) || $body === ''
+    || mb_strlen($name) > 100 || mb_strlen($email) > 254 || mb_strlen($body) > 2000) {
     flash_set('inq', 'error');
     header('Location: /product.php?id='.$productId);
     exit;

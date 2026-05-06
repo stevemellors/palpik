@@ -4,7 +4,7 @@ $sessionParams = [
   'lifetime' => 0,
   'path'     => '/',
   'domain'   => '.palletpiks.com',   // works for www.palletpiks.com and palletpiks.com
-  'secure'   => true,                 // require HTTPS
+  'secure'   => !empty($_SERVER['HTTPS']) || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'),
   'httponly' => true,
   'samesite' => 'Lax',
 ];
