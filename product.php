@@ -28,7 +28,7 @@ if (!$p) {
 }
 
 $inStock = isset($p['stock']) && (int)$p['stock'] > 0;
-$inqStatus = $_GET['inq'] ?? '';
+$inqStatus = flash_get('inq');
 ?>
 <!doctype html>
 <html lang="en">

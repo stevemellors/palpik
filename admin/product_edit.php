@@ -5,8 +5,7 @@ require_once __DIR__.'/../inc/helpers.php';
 require_once __DIR__.'/../inc/product_repo.php';
 require_once __DIR__.'/../inc/category_repo.php';
 
-if (session_status() !== PHP_SESSION_ACTIVE) session_start();
-if (empty($_SESSION['admin_email'])) { header('Location: /admin/login.php'); exit; }
+require_once __DIR__."/../inc/admin_guard.php";
 
 $id   = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $item = $id ? product_get($id) : ['id'=>0,'name'=>'','description'=>'','price'=>'','image'=>null,'category_id'=>null,'stock'=>0];

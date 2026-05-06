@@ -4,8 +4,7 @@ require_once __DIR__.'/../inc/config.php';
 require_once __DIR__.'/../inc/helpers.php';
 require_once __DIR__.'/../inc/category_repo.php';
 
-if (session_status() !== PHP_SESSION_ACTIVE) session_start();
-if (empty($_SESSION['admin_email'])) { header('Location: /admin/login.php'); exit; }
+require_once __DIR__."/../inc/admin_guard.php";
 
 $id   = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $cat  = $id ? category_get($id) : ['id'=>0,'name'=>'','description'=>''];

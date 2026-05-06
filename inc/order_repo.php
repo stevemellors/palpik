@@ -7,47 +7,75 @@ function order_create(array $data, array $cart): int {
     if (!$cart) throw new RuntimeException('Cart is empty');
     $pdo = db();
     $pdo->beginTransaction();
+    try {
+        // Re-fetch current prices and lock rows to check stock
+        $stProd = $pdo->prepare("SELECT id, name, price, stock FROM products WHERE id = ? FOR UPDATE");
+        $verified = [];
+        foreach ($cart as $line) {
+            $stProd->execute([(int)$line['id']]);
+            $prod = $stProd->fetch();
+            if (!$prod) {
+                throw new RuntimeException('"'.htmlspecialchars((string)($line['name'] ?? ''))
+                    .'" is no longer available.');
+            }
+            $avail = (int)$prod['stock'];
+            $qty   = max(1, (int)$line['qty']);
+            if ($avail < $qty) {
+                throw new RuntimeException('"'.htmlspecialchars((string)$prod['name'])
+                    .'" only has '.$avail.' in stock (you requested '.$qty.').');
+            }
+            $verified[] = [
+                'id'    => (int)$prod['id'],
+                'name'  => $prod['name'],
+                'price' => (float)$prod['price'],
+                'qty'   => $qty,
+            ];
+        }
 
-    $subtotal = 0.0;
-    foreach ($cart as $line) $subtotal += ((float)$line['price']) * ((int)$line['qty']);
-    $tax      = round($subtotal * 0.08, 2);
-    $shipping = $subtotal > 100 ? 0.00 : 6.99;
-    $total    = round($subtotal + $tax + $shipping, 2);
+        $subtotal = 0.0;
+        foreach ($verified as $line) $subtotal += $line['price'] * $line['qty'];
+        $tax      = round($subtotal * 0.08, 2);
+        $shipping = $subtotal > 100 ? 0.00 : 6.99;
+        $total    = round($subtotal + $tax + $shipping, 2);
 
-    $st = $pdo->prepare("INSERT INTO `orders`
-        (`email`,`name`,`address`,`city`,`state`,`zip`,`subtotal`,`tax`,`shipping`,`total`,`payment_method`,`status`)
-        VALUES (:email,:name,:address,:city,:state,:zip,:subtotal,:tax,:shipping,:total,:payment_method,:status)");
-    $st->execute([
-        ':email'          => $data['email'] ?? '',
-        ':name'           => $data['name'] ?? '',
-        ':address'        => $data['address'] ?? '',
-        ':city'           => $data['city'] ?? '',
-        ':state'          => $data['state'] ?? '',
-        ':zip'            => $data['zip'] ?? '',
-        ':subtotal'       => $subtotal,
-        ':tax'            => $tax,
-        ':shipping'       => $shipping,
-        ':total'          => $total,
-        ':payment_method' => $data['payment_method'] ?? 'Test',
-        ':status'         => 'pending',
-    ]);
-    $orderId = (int)$pdo->lastInsertId();
-
-    $sti  = $pdo->prepare("INSERT INTO `order_items` (`order_id`,`product_id`,`name`,`price`,`qty`) VALUES (:order_id,:product_id,:name,:price,:qty)");
-    $stUp = $pdo->prepare("UPDATE `products` SET `stock` = GREATEST(`stock` - :qty, 0) WHERE `id` = :id");
-    foreach ($cart as $line) {
-        $sti->execute([
-            ':order_id'   => $orderId,
-            ':product_id' => (int)$line['id'],
-            ':name'       => $line['name'],
-            ':price'      => (float)$line['price'],
-            ':qty'        => (int)$line['qty'],
+        $st = $pdo->prepare("INSERT INTO `orders`
+            (`email`,`name`,`address`,`city`,`state`,`zip`,`subtotal`,`tax`,`shipping`,`total`,`payment_method`,`status`)
+            VALUES (:email,:name,:address,:city,:state,:zip,:subtotal,:tax,:shipping,:total,:payment_method,:status)");
+        $st->execute([
+            ':email'          => $data['email'] ?? '',
+            ':name'           => $data['name'] ?? '',
+            ':address'        => $data['address'] ?? '',
+            ':city'           => $data['city'] ?? '',
+            ':state'          => $data['state'] ?? '',
+            ':zip'            => $data['zip'] ?? '',
+            ':subtotal'       => $subtotal,
+            ':tax'            => $tax,
+            ':shipping'       => $shipping,
+            ':total'          => $total,
+            ':payment_method' => $data['payment_method'] ?? 'Test',
+            ':status'         => 'pending',
         ]);
-        if (!empty($line['id'])) $stUp->execute([':qty' => (int)$line['qty'], ':id' => (int)$line['id']]);
-    }
+        $orderId = (int)$pdo->lastInsertId();
 
-    $pdo->commit();
-    return $orderId;
+        $sti  = $pdo->prepare("INSERT INTO `order_items` (`order_id`,`product_id`,`name`,`price`,`qty`) VALUES (:order_id,:product_id,:name,:price,:qty)");
+        $stUp = $pdo->prepare("UPDATE `products` SET `stock` = stock - :qty WHERE `id` = :id");
+        foreach ($verified as $line) {
+            $sti->execute([
+                ':order_id'   => $orderId,
+                ':product_id' => $line['id'],
+                ':name'       => $line['name'],
+                ':price'      => $line['price'],
+                ':qty'        => $line['qty'],
+            ]);
+            $stUp->execute([':qty' => $line['qty'], ':id' => $line['id']]);
+        }
+
+        $pdo->commit();
+        return $orderId;
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        throw $e;
+    }
 }
 
 function order_get(int $id): ?array {

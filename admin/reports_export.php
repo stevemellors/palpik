@@ -2,8 +2,7 @@
 declare(strict_types=1);
 require_once __DIR__.'/../inc/config.php';
 require_once __DIR__.'/../inc/db.php';
-if (session_status() !== PHP_SESSION_ACTIVE) session_start();
-if (empty($_SESSION['admin_email'])) { http_response_code(403); exit('Forbidden'); }
+require_once __DIR__.'/../inc/admin_guard.php';
 $dbh = db();
 
 $fromRaw = preg_replace('/[^0-9T: -]/', '', $_GET['from'] ?? '');

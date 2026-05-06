@@ -2,8 +2,7 @@
 declare(strict_types=1);
 require_once __DIR__.'/../inc/config.php';
 require_once __DIR__.'/../inc/db.php';
-if (session_status() !== PHP_SESSION_ACTIVE) session_start();
-if (empty($_SESSION['admin_email'])) { header('Location: /admin/login.php'); exit; }
+require_once __DIR__.'/../inc/admin_guard.php';
 $dbh = db();
 
 /* --- CONFIG --- */
@@ -12,7 +11,7 @@ $tz = 'America/New_York';
 
 /* --- Period window --- */
 $period = $_GET['period'] ?? 'week';
-function windowFor($period, $tz){
+function reports_window_for($period, $tz){
   switch ($period) {
     case 'month':
       $from = (new DateTime('first day of this month', new DateTimeZone($tz)))->format('Y-m-d 00:00:00');
@@ -38,7 +37,7 @@ function windowFor($period, $tz){
   }
   return [$from,$to];
 }
-list($from,$to) = windowFor($period,$tz);
+list($from,$to) = reports_window_for($period,$tz);
 
 /* --- Filters --- */
 $cat  = isset($_GET['category']) && $_GET['category'] !== '' ? (int)$_GET['category'] : null;
@@ -73,7 +72,7 @@ $paramsAgg = $params;
 unset($paramsAgg[':f'], $paramsAgg[':t']);
 
 /* helpers */
-function q($dbh, $sql, $params = []) {
+function reports_q($dbh, $sql, $params = []) {
   $st = $dbh->prepare($sql);
   $st->execute($params);
   return $st->fetchAll(PDO::FETCH_ASSOC);
@@ -81,15 +80,15 @@ function q($dbh, $sql, $params = []) {
 
 /* --- Picklists --- */
 $categories = [];
-try { $categories = q($dbh, "SELECT id,name FROM categories ORDER BY name"); } catch(Throwable $e) {}
+try { $categories = reports_q($dbh, "SELECT id,name FROM categories ORDER BY name"); } catch(Throwable $e) {}
 if (!$categories) {
-  $categories = q($dbh, "SELECT DISTINCT category_id AS id, CONCAT('Category ',category_id) AS name FROM products ORDER BY id");
+  $categories = reports_q($dbh, "SELECT DISTINCT category_id AS id, CONCAT('Category ',category_id) AS name FROM products ORDER BY id");
 }
-$products = q($dbh, "SELECT id,name FROM products ORDER BY name");
-$payments = q($dbh, "SELECT DISTINCT payment_method pm FROM orders WHERE payment_method IS NOT NULL AND payment_method<>'' ORDER BY pm");
+$products = reports_q($dbh, "SELECT id,name FROM products ORDER BY name");
+$payments = reports_q($dbh, "SELECT DISTINCT payment_method pm FROM orders WHERE payment_method IS NOT NULL AND payment_method<>'' ORDER BY pm");
 
 /* --- Aggregates (weekly/monthly/yearly), honoring filters --- */
-$weekly  = q($dbh, "
+$weekly  = reports_q($dbh, "
   SELECT YEARWEEK(v.ordered_at,3) AS yw,
          DATE_FORMAT(MIN(DATE_SUB(v.ordered_at, INTERVAL WEEKDAY(v.ordered_at) DAY)), '%Y-%m-%d') AS week_start,
          SUM(v.line_total) AS revenue, SUM(v.qty) AS units
@@ -99,7 +98,7 @@ $weekly  = q($dbh, "
     AND v.ordered_at >= DATE_SUB(CURDATE(), INTERVAL 12 WEEK)
   GROUP BY yw ORDER BY yw DESC", $paramsAgg);
 
-$monthly = q($dbh, "
+$monthly = reports_q($dbh, "
   SELECT DATE_FORMAT(v.ordered_at,'%Y-%m') AS ym,
          SUM(v.line_total) AS revenue, SUM(v.qty) AS units
   FROM v_sales_lines v
@@ -108,7 +107,7 @@ $monthly = q($dbh, "
     AND v.ordered_at >= DATE_SUB(DATE_FORMAT(CURDATE(),'%Y-%m-01'), INTERVAL 12 MONTH)
   GROUP BY ym ORDER BY ym DESC", $paramsAgg);
 
-$yearly  = q($dbh, "
+$yearly  = reports_q($dbh, "
   SELECT YEAR(v.ordered_at) AS yr,
          SUM(v.line_total) AS revenue, SUM(v.qty) AS units
   FROM v_sales_lines v
@@ -118,7 +117,7 @@ $yearly  = q($dbh, "
   GROUP BY yr ORDER BY yr DESC", $paramsAgg);
 
 /* --- Current window detail (honors filters) --- */
-$detail  = q($dbh, "
+$detail  = reports_q($dbh, "
   SELECT v.ordered_at, v.order_id, v.product_name, v.qty, v.unit_price, v.line_total
   FROM v_sales_lines v
   $joins_sql
@@ -142,7 +141,7 @@ $paramsPrev = $params; // carries filters + placeholders
 $paramsPrev[':f'] = $prevFrom->format('Y-m-d H:i:s');
 $paramsPrev[':t'] = $prevTo->format('Y-m-d H:i:s');
 
-$prevDetail = q($dbh, "
+$prevDetail = reports_q($dbh, "
   SELECT v.qty, v.line_total
   FROM v_sales_lines v
   $joins_sql
@@ -150,13 +149,13 @@ $prevDetail = q($dbh, "
 $prevOrders = count($prevDetail);
 $prevUnits  = 0.0; $prevRevenue = 0.0;
 foreach ($prevDetail as $d) { $prevUnits += (float)$d['qty']; $prevRevenue += (float)$d['line_total']; }
-function pct($now,$prev){ if ($prev<=0) return $now>0?100:0; return (($now-$prev)/$prev)*100; }
-$deltaRev   = pct($revenueSum,$prevRevenue);
-$deltaUnits = pct($unitsSum,$prevUnits);
-$deltaOrders= pct($ordersCount,$prevOrders);
+function reports_pct($now,$prev){ if ($prev<=0) return $now>0?100:0; return (($now-$prev)/$prev)*100; }
+$deltaRev   = reports_pct($revenueSum,$prevRevenue);
+$deltaUnits = reports_pct($unitsSum,$prevUnits);
+$deltaOrders= reports_pct($ordersCount,$prevOrders);
 
 /* --- Top products (in window) --- */
-$topProducts = q($dbh, "
+$topProducts = reports_q($dbh, "
   SELECT v.product_id, v.product_name, SUM(v.qty) AS units, SUM(v.line_total) AS revenue
   FROM v_sales_lines v
   $joins_sql
@@ -171,7 +170,7 @@ $invParams = [];
 if ($cat !== null) { $invWhere[] = "category_id = :cat"; $invParams[':cat'] = $cat; }
 if ($prod !== null){ $invWhere[] = "id = :prod";        $invParams[':prod'] = $prod; }
 $invWhereSql = $invWhere ? "WHERE ".implode(" AND ", $invWhere) : "";
-$inv = q($dbh, "SELECT id AS product_id, name, stock, price FROM products $invWhereSql ORDER BY name", $invParams);
+$inv = reports_q($dbh, "SELECT id AS product_id, name, stock, price FROM products $invWhereSql ORDER BY name", $invParams);
 
 /* CSV link (propagate filters) */
 $csv_query = http_build_query(['from'=>$from,'to'=>$to,'category'=>$cat,'product'=>$prod,'payment'=>$pay]);

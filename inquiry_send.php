@@ -19,14 +19,21 @@ $honeypot  = trim($_POST['company'] ?? ''); // hidden anti-bot
 if ($honeypot !== '') { header('Location: /'); exit; }
 
 if ($productId <= 0 || !filter_var($email, FILTER_VALIDATE_EMAIL) || $body === '') {
-    header('Location: /product.php?id='.$productId.'&inq=error'); 
+    flash_set('inq', 'error');
+    header('Location: /product.php?id='.$productId);
     exit;
 }
 
 $p = product_get($productId);
 if (!$p) { header('Location: /?missing=product'); exit; }
 
-$inqId = inquiry_find_or_create($productId, $email, ($name ?: null), $body);
+try {
+    $inqId = inquiry_find_or_create($productId, $email, ($name ?: null), $body);
+} catch (Throwable $e) {
+    flash_set('inq', 'error');
+    header('Location: /product.php?id='.$productId);
+    exit;
+}
 
 /* Send notify email */
 $subject = 'New Product Inquiry: '.$p['name'].' (Inquiry #'.$inqId.')';
@@ -41,5 +48,6 @@ $headers = [
 ];
 @mail('palletpiks@gmail.com', $subject, $html, implode("\r\n", $headers));
 
-header('Location: /product.php?id='.$productId.'&inq=sent'); 
+flash_set('inq', 'sent');
+header('Location: /product.php?id='.$productId);
 exit;

@@ -40,3 +40,15 @@ function csrf_verify(): void {
         exit('Invalid or missing CSRF token.');
     }
 }
+
+// Flash messages: store a one-time message in session
+function flash_set(string $key, string $msg): void {
+    $_SESSION['_flash'][$key] = $msg;
+}
+
+// Flash messages: retrieve and clear a one-time message
+function flash_get(string $key): string {
+    $msg = (string)($_SESSION['_flash'][$key] ?? '');
+    unset($_SESSION['_flash'][$key]);
+    return $msg;
+}

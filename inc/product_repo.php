@@ -89,3 +89,44 @@ function products_by_category_id(int $categoryId): array {
     $st->execute([$categoryId]);
     return $st->fetchAll();
 }
+
+function products_by_category_paged(int $categoryId, int $limit, int $offset): array {
+    $st = db()->prepare("SELECT id, name, description, price, image
+                         FROM products WHERE category_id = ?
+                         ORDER BY id DESC LIMIT ? OFFSET ?");
+    $st->bindValue(1, $categoryId, \PDO::PARAM_INT);
+    $st->bindValue(2, $limit,      \PDO::PARAM_INT);
+    $st->bindValue(3, $offset,     \PDO::PARAM_INT);
+    $st->execute();
+    return $st->fetchAll();
+}
+
+function products_count_by_category(int $categoryId): int {
+    $st = db()->prepare("SELECT COUNT(*) FROM products WHERE category_id = ?");
+    $st->execute([$categoryId]);
+    return (int)$st->fetchColumn();
+}
+
+function products_search(string $q, int $limit, int $offset): array {
+    $like = '%'.$q.'%';
+    $st = db()->prepare(
+        "SELECT p.id, p.name, p.description, p.price, p.image, p.stock, c.name AS category_name
+         FROM products p
+         LEFT JOIN categories c ON c.id = p.category_id
+         WHERE p.name LIKE ? OR p.description LIKE ?
+         ORDER BY p.name ASC LIMIT ? OFFSET ?"
+    );
+    $st->bindValue(1, $like);
+    $st->bindValue(2, $like);
+    $st->bindValue(3, $limit,  \PDO::PARAM_INT);
+    $st->bindValue(4, $offset, \PDO::PARAM_INT);
+    $st->execute();
+    return $st->fetchAll();
+}
+
+function products_search_count(string $q): int {
+    $like = '%'.$q.'%';
+    $st = db()->prepare("SELECT COUNT(*) FROM products WHERE name LIKE ? OR description LIKE ?");
+    $st->execute([$like, $like]);
+    return (int)$st->fetchColumn();
+}

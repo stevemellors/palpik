@@ -4,7 +4,6 @@ require_once __DIR__.'/../inc/config.php';
 require_once __DIR__.'/../inc/helpers.php';
 require_once __DIR__.'/../inc/user_repo.php';
 
-if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 if (!empty($_SESSION['admin_email'])) { header('Location: /admin/panel.php'); exit; }
 
 const LOGIN_MAX_ATTEMPTS = 5;
@@ -61,5 +60,8 @@ if (!$lockedOut && $_SERVER['REQUEST_METHOD'] === 'POST') {
   <label>Password <input type="password" name="password" required></label>
   <button class="btn" type="submit">Sign in</button>
 </form>
-<p style="margin-top:10px;"><a class="btn" href="/">← Storefront</a></p>
+<p style="margin-top:10px;">
+  <a class="btn" href="/">← Storefront</a>
+  <a href="/admin/forgot_password.php" style="margin-left:10px;font-size:13px;">Forgot password?</a>
+</p>
 </body></html>

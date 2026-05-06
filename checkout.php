@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="card">
               <div class="kicker">Order placed</div>
               <p>Your order #<?= (int)$orderId ?> has been placed.</p>
-              <p><strong>Total:</strong> <?= money((float)$total) ?></p>
+              <p><strong>Total:</strong> <?= money((float)$ord['total']) ?></p>
               <a class="btn" href="/">Back to store</a>
             </div>
             </body></html><?php

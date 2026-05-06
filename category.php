@@ -26,7 +26,12 @@ if (!$cat) {
     exit;
 }
 
-$items = products_by_category_id($id);
+$perPage = 12;
+$page    = max(1, (int)($_GET['page'] ?? 1));
+$total   = products_count_by_category($id);
+$pages   = max(1, (int)ceil($total / $perPage));
+$page    = min($page, $pages);
+$items   = products_by_category_paged($id, $perPage, ($page - 1) * $perPage);
 $allCats = categories_all();
 ?>
 <!doctype html>
@@ -93,6 +98,15 @@ $allCats = categories_all();
         </div>
       </a>
     <?php endforeach; ?>
+  </div>
+<?php endif; ?>
+
+<?php if ($pages > 1): ?>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin:20px 0;justify-content:center;">
+    <?php for ($i = 1; $i <= $pages; $i++): ?>
+      <a class="btn <?= $i === $page ? 'acc' : 'secondary' ?>"
+         href="/category.php?id=<?= $id ?>&page=<?= $i ?>"><?= $i ?></a>
+    <?php endfor; ?>
   </div>
 <?php endif; ?>
 

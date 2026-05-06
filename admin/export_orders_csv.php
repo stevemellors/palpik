@@ -3,8 +3,7 @@ declare(strict_types=1);
 require_once __DIR__.'/../inc/config.php';
 require_once __DIR__.'/../inc/order_repo.php';
 
-if (session_status() !== PHP_SESSION_ACTIVE) session_start();
-if (empty($_SESSION['admin_email'])) { http_response_code(403); exit('Forbidden'); }
+require_once __DIR__.'/../inc/admin_guard.php';
 
 $archived = ($_GET['archived'] ?? '0') === '1';
 $status   = $_GET['status'] ?? 'all';

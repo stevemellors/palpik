@@ -5,21 +5,20 @@ require_once __DIR__.'/inc/helpers.php';
 require_once __DIR__.'/inc/db.php';
 require_once __DIR__.'/inc/nav.php';
 
+require_once __DIR__.'/inc/product_repo.php';
+
 $q       = trim($_GET['q'] ?? '');
+$perPage = 12;
+$page    = max(1, (int)($_GET['page'] ?? 1));
+$total   = 0;
+$pages   = 1;
 $results = [];
 
 if ($q !== '') {
-    $like = '%'.$q.'%';
-    $st = db()->prepare(
-        "SELECT p.id, p.name, p.description, p.price, p.image, p.stock, c.name AS category_name
-         FROM products p
-         LEFT JOIN categories c ON c.id = p.category_id
-         WHERE p.name LIKE ? OR p.description LIKE ?
-         ORDER BY p.name ASC
-         LIMIT 60"
-    );
-    $st->execute([$like, $like]);
-    $results = $st->fetchAll();
+    $total   = products_search_count($q);
+    $pages   = max(1, (int)ceil($total / $perPage));
+    $page    = min($page, $pages);
+    $results = products_search($q, $perPage, ($page - 1) * $perPage);
 }
 ?>
 <!doctype html>
@@ -49,7 +48,7 @@ if ($q !== '') {
   <p class="search-empty">No products found for "<strong><?= h($q) ?></strong>".</p>
 
 <?php else: ?>
-  <p class="kicker" style="margin-bottom:14px;"><?= count($results) ?> result<?= count($results) !== 1 ? 's' : '' ?> for "<?= h($q) ?>"</p>
+  <p class="kicker" style="margin-bottom:14px;"><?= $total ?> result<?= $total !== 1 ? 's' : '' ?> for "<?= h($q) ?>"</p>
   <div class="grid prod-grid">
     <?php foreach ($results as $p): ?>
       <a class="card product-card" href="/product.php?id=<?= (int)$p['id'] ?>">
@@ -77,6 +76,15 @@ if ($q !== '') {
         </div>
       </a>
     <?php endforeach; ?>
+  </div>
+<?php endif; ?>
+
+<?php if ($pages > 1): ?>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin:20px 0;justify-content:center;">
+    <?php for ($i = 1; $i <= $pages; $i++): ?>
+      <a class="btn <?= $i === $page ? 'acc' : 'secondary' ?>"
+         href="/search.php?q=<?= urlencode($q) ?>&page=<?= $i ?>"><?= $i ?></a>
+    <?php endfor; ?>
   </div>
 <?php endif; ?>
 

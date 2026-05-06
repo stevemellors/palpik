@@ -51,3 +51,26 @@ function user_verify_admin_login(string $email, string $plainPassword): bool {
   if ($u['role'] !== 'admin') return false;
   return password_verify($plainPassword, (string)$u['password_hash']);
 }
+
+function user_create_reset_token(string $email): ?string {
+  $u = user_get_by_email($email);
+  if (!$u || $u['role'] !== 'admin') return null;
+  $token = bin2hex(random_bytes(32));
+  $exp   = date('Y-m-d H:i:s', time() + 3600);
+  $st = db()->prepare("UPDATE users SET reset_token=?, reset_token_exp=? WHERE id=?");
+  $st->execute([$token, $exp, $u['id']]);
+  return $token;
+}
+
+function user_verify_reset_token(string $token): ?array {
+  $st = db()->prepare("SELECT id, email FROM users WHERE reset_token=? AND reset_token_exp > NOW()");
+  $st->execute([$token]);
+  $row = $st->fetch();
+  return $row ?: null;
+}
+
+function user_consume_reset_token(int $id, string $newPassword): void {
+  $hash = password_hash($newPassword, PASSWORD_BCRYPT);
+  $st = db()->prepare("UPDATE users SET password_hash=?, reset_token=NULL, reset_token_exp=NULL WHERE id=?");
+  $st->execute([$hash, $id]);
+}
