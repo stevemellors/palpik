@@ -1,0 +1,9 @@
+/* Theme override — kept minimal; base variables live in styles.css */
+[data-theme="light"] .admin-shell { background: #f1f5f9; }
+[data-theme="light"] .admin-sidebar,
+[data-theme="light"] .admin-topbar { background: #ffffff; border-color: rgba(15,23,42,.10); }
+[data-theme="light"] .admin-nav a { color: #475569; }
+[data-theme="light"] .admin-nav a:hover,
+[data-theme="light"] .admin-nav a.active { background: #f1f5f9; color: #0f172a; border-color: rgba(15,23,42,.10); }
+[data-theme="light"] .admin-main { background: #f1f5f9; }
+.text-danger { color: var(--danger); }

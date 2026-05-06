@@ -1,0 +1,12 @@
+<IfModule mod_autoindex.c>
+  Options -Indexes
+</IfModule>
+
+# Block direct browser access to backend directories
+RewriteEngine On
+RewriteRule ^(vendor|inc)(/|$) - [F,L]
+
+# Pretty links: /page.html -> /page.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.+)\.html$ /$1.php [L,QSA]

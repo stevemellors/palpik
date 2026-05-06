@@ -1,0 +1,14 @@
+:root{
+  --panel-bg:#ffffff; --panel-border:rgba(0,0,0,.08);
+  --card-bg:#ffffff;  --card-border:rgba(0,0,0,.08);
+  --text:#111111;     --muted:#666666;
+  --accent:#3b82f6;   --hover:rgba(0,0,0,.05);
+  --btn-bg:#f5f5f5;   --btn-text:#111111;
+}
+:root[data-theme="dark"], [data-theme="dark"]{
+  --panel-bg:#14161a; --panel-border:rgba(255,255,255,.08);
+  --card-bg:#171a20;  --card-border:rgba(255,255,255,.08);
+  --text:#e8eaf0;     --muted:#a7adba;
+  --accent:#7aa7ff;   --hover:rgba(255,255,255,.06);
+  --btn-bg:#1e222a;   --btn-text:#e8eaf0;
+}
