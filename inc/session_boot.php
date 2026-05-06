@@ -19,4 +19,4 @@ if (PHP_VERSION_ID >= 70300) {
     $sessionParams['httponly']
   );
 }
-if (session_status() === PHP_SESSION_NONE) { @session_start(); }
+if (session_status() === PHP_SESSION_NONE) { session_start(); }

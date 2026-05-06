@@ -30,13 +30,18 @@ function inquiry_add_message(int $inquiryId, string $sender, string $body, bool 
     $pdo = db();
     $sender = ($sender === 'admin') ? 'admin' : 'buyer';
     $pdo->beginTransaction();
-    $stm = $pdo->prepare("INSERT INTO inquiry_messages (inquiry_id, sender, body) VALUES (?,?,?)");
-    $stm->execute([$inquiryId, $sender, $body]);
-    if ($updateLast) {
-        $st2 = $pdo->prepare("UPDATE product_inquiries SET last_message=?, updated_at=NOW() WHERE id=?");
-        $st2->execute([$body, $inquiryId]);
+    try {
+        $stm = $pdo->prepare("INSERT INTO inquiry_messages (inquiry_id, sender, body) VALUES (?,?,?)");
+        $stm->execute([$inquiryId, $sender, $body]);
+        if ($updateLast) {
+            $st2 = $pdo->prepare("UPDATE product_inquiries SET last_message=?, updated_at=NOW() WHERE id=?");
+            $st2->execute([$body, $inquiryId]);
+        }
+        $pdo->commit();
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        throw $e;
     }
-    $pdo->commit();
 }
 
 /** List inquiries by status ('open' or 'closed'), newest updated first */

@@ -7,19 +7,40 @@ require_once __DIR__.'/../inc/user_repo.php';
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 if (!empty($_SESSION['admin_email'])) { header('Location: /admin/panel.php'); exit; }
 
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_LOCKOUT_SECONDS = 900; // 15 minutes
+
 $error = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+$lockedOut = false;
+
+if (!empty($_SESSION['login_lockout_until']) && time() < $_SESSION['login_lockout_until']) {
+    $remaining = (int)ceil(($_SESSION['login_lockout_until'] - time()) / 60);
+    $error = "Too many failed attempts. Try again in {$remaining} minute(s).";
+    $lockedOut = true;
+}
+
+if (!$lockedOut && $_SERVER['REQUEST_METHOD'] === 'POST') {
   $email = trim($_POST['email'] ?? '');
   $pwd   = trim($_POST['password'] ?? '');
   if (!filter_var($email, FILTER_VALIDATE_EMAIL) || $pwd === '') {
     $error = 'Enter a valid email and password.';
   } else {
     if (user_verify_admin_login($email, $pwd)) {
+      $_SESSION['login_attempts'] = 0;
+      unset($_SESSION['login_lockout_until']);
       session_regenerate_id(true);
       $_SESSION['admin_email'] = $email;
       header('Location: /admin/panel.php'); exit;
     } else {
-      $error = 'Invalid credentials or not an admin.';
+      $_SESSION['login_attempts'] = ($_SESSION['login_attempts'] ?? 0) + 1;
+      if ($_SESSION['login_attempts'] >= LOGIN_MAX_ATTEMPTS) {
+          $_SESSION['login_lockout_until'] = time() + LOGIN_LOCKOUT_SECONDS;
+          $_SESSION['login_attempts'] = 0;
+          $error = 'Too many failed attempts. Try again in 15 minutes.';
+      } else {
+          $remaining = LOGIN_MAX_ATTEMPTS - $_SESSION['login_attempts'];
+          $error = "Invalid credentials or not an admin. {$remaining} attempt(s) remaining.";
+      }
     }
   }
 }

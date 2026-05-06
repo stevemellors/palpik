@@ -1,0 +1,4 @@
+# Deny execution of PHP and other scripts in this directory
+<FilesMatch "\.(php\d?|phtml|phar|cgi|pl|py|rb|sh)$">
+    Require all denied
+</FilesMatch>

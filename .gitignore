@@ -1,3 +1,5 @@
 vendor/
 uploads/*
 !uploads/.gitkeep
+!uploads/.htaccess
+inc/config.php

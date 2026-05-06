@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__.'/session_boot.php';
 
 // Escape HTML output
 function h(string $str): string {
