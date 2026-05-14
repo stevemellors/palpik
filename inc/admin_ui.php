@@ -47,6 +47,9 @@ function admin_header(string $title='Dashboard', string $active='panel'): void {
   </aside>
 
   <header class='admin-topbar'>
+    <button class='admin-menu-btn' id='adminMenuBtn' type='button' aria-label='Toggle menu' aria-expanded='false'>
+      <span></span><span></span><span></span>
+    </button>
     <div class='ttl'>".h($title)."</div>
     <div class='who'>".h($me)."</div>
   </header>

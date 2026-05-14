@@ -18,7 +18,10 @@ function site_nav(string $active=''): string {
     return <<<HTML
 <header class="site-header">
   <a class="brand" href="/"><span class="logo-dot"></span><strong>Pallet Picks</strong></a>
-  <nav class="nav">
+  <button class="nav-toggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="site-nav">
+    <span></span><span></span><span></span>
+  </button>
+  <nav class="nav" id="site-nav">
     {$catLinks}
     <form class="nav-search" action="/search.php" method="get" role="search">
       <input type="search" name="q" value="{$q}" placeholder="Search…" aria-label="Search products">

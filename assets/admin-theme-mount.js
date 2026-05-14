@@ -24,5 +24,31 @@
     if(brand&&brand.nextSibling){ brand.parentNode.insertBefore(btn,brand.nextSibling); } else { host.appendChild(btn); }
     setTheme(getTheme() || (window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));
   }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',mount); else mount();
+  function mountAdminNav(){
+    var btn=document.getElementById('adminMenuBtn');
+    var sidebar=document.querySelector('.admin-sidebar');
+    if(!btn||!sidebar) return;
+    var overlay=document.createElement('div');
+    overlay.className='admin-overlay';
+    document.body.appendChild(overlay);
+    function open(){
+      sidebar.classList.add('open');
+      overlay.classList.add('open');
+      btn.setAttribute('aria-expanded','true');
+    }
+    function close(){
+      sidebar.classList.remove('open');
+      overlay.classList.remove('open');
+      btn.setAttribute('aria-expanded','false');
+    }
+    btn.addEventListener('click',function(){ sidebar.classList.contains('open')?close():open(); });
+    overlay.addEventListener('click',close);
+    sidebar.querySelectorAll('a').forEach(function(a){ a.addEventListener('click',close); });
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){ mount(); mountAdminNav(); });
+  } else {
+    mount(); mountAdminNav();
+  }
 })();

@@ -35,8 +35,29 @@
     nav.appendChild(btn);
     updateButton(root.getAttribute('data-theme') || 'dark');
   }
+  function mountNavToggle() {
+    const btn = document.querySelector('.nav-toggle');
+    const nav = document.getElementById('site-nav');
+    if (!btn || !nav) return;
+    btn.addEventListener('click', function() {
+      const expanded = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!expanded));
+      nav.classList.toggle('open', !expanded);
+    });
+    document.addEventListener('click', function(e) {
+      if (!btn.contains(e.target) && !nav.contains(e.target)) {
+        btn.setAttribute('aria-expanded', 'false');
+        nav.classList.remove('open');
+      }
+    });
+  }
+
   const saved = currentTheme();
   applyTheme(saved || systemPrefers());
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mountButton);
-  else mountButton();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() { mountButton(); mountNavToggle(); });
+  } else {
+    mountButton();
+    mountNavToggle();
+  }
 })();
