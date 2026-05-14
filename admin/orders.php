@@ -19,7 +19,7 @@ $orders = orders_active_search($status, $q, 500);
         <option value="<?= h($opt) ?>" <?= $status===$opt?'selected':'' ?>><?= ucfirst($opt) ?></option>
       <?php endforeach; ?>
     </select>
-    <input name="q" placeholder="Search by #, email, name" value="<?= h($q) ?>" style="padding:10px;border-radius:10px;border:1px solid var(--line);background: var(--card); color: var(--ink);min-width:260px;">
+    <input name="q" placeholder="Search by #, email, name" value="<?= h($q) ?>" style="padding:10px;border-radius:10px;border:1px solid var(--line);background: var(--card); color: var(--ink);flex:1;min-width:160px;">
     <button class="btn" type="submit">Filter</button>
     <a class="btn" href="/admin/orders.php">Reset</a>
   </form>
